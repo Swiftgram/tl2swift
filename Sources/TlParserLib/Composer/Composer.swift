@@ -28,13 +28,15 @@ open class Composer {
     public func composeEntityUtilityImplementation(
         forEntityName entityName: String,
         projectName: String,
-        outputDirectory: String
+        outputDirectory: String,
+        tdLibVersion: String? = nil,
+        tdLibCommit: String? = nil
     ) throws -> Implementation {
         let filename: String = composeEntityUtilityFilename(entityName)
         let path: String = outputDirectory.hasSuffix("/") ? outputDirectory + filename : outputDirectory + "/" + filename
         let sourceCode: String =
             try
-                composeCopyrightComment(forFilename: filename, project: projectName).addBlankLine() +
+                composeCopyrightComment(forFilename: filename, project: projectName, tdLibVersion: tdLibVersion, tdLibCommit: tdLibCommit).addBlankLine() +
                 composeImports().addBlankLine().addBlankLine() +
                 composeUtilitySourceCode()
         
@@ -50,15 +52,28 @@ open class Composer {
     }
     
     /// Compose copytight comment header.
-    /// - returns: Comment with project & file names, "Created by Code Generator"
-    open func composeCopyrightComment(forFilename filename: String, project: String) -> String {
-        return ""
+    /// - returns: Comment with project & file names, "Generated automatically. Any changes will be lost!"
+    open func composeCopyrightComment(forFilename filename: String, project: String, tdLibVersion: String? = nil, tdLibCommit: String? = nil) -> String {
+        var result = ""
             .addLine("//")
             .addLine("//  \(filename)")
             .addLine("//  \(project)")
             .addLine("//")
-            .addLine("//  Created by Code Generator")
-            .addLine("//")
+            .addLine("//  Generated automatically. Any changes will be lost!")
+            
+        if let strongtdLibVersion = tdLibVersion, !strongtdLibVersion.isEmpty, let strongTdLibCommit = tdLibCommit, !strongTdLibCommit.isEmpty {
+            result = result.addLine("//  Based on TDLib \(strongtdLibVersion)-\(strongTdLibCommit)")
+            result = result.addLine("//  https://github.com/tdlib/td/tree/\(strongTdLibCommit)")
+        } else if let strongtdLibVersion = tdLibVersion, !strongtdLibVersion.isEmpty {
+            result = result.addLine("//  Based on TDLib version \(strongtdLibVersion)")
+        } else if let strongTdLibCommit = tdLibCommit, !strongTdLibCommit.isEmpty {
+            result = result.addLine("//  Based on TDLib commit \(strongTdLibCommit)")
+            result = result.addLine("//  https://github.com/tdlib/td/tree/\(strongTdLibCommit)")
+        }
+
+        result = result.addLine("//")
+        
+        return result
     }
     
     /// Compose import declarations.

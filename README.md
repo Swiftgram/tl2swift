@@ -4,12 +4,12 @@ This project designated for parsing Telegram Type Language (.tl) specification f
 `tl2swift` generates swift structures, enums and methods for working with TDLib json interface. See example in project [tdlib-swift](https://github.com/modestman/tdlib-swift)
 
 
-### Build
-```shell
-$ make release
-```
-
 ### Usage 
 ```shell
-$ tl2swift td_api.tl ./output/
+$ swift run tl2swift td_api.tl ./output/
+```
+
+Set TDLib version & commit in header comment
+```shell
+$ swift run tl2swift td_api.tl ./output/ 1.7.5 73d8fb4
 ```

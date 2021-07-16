@@ -20,14 +20,18 @@ public final class Application {
     
     private let schema: Schema
     private let outputDir: URL
+    private let tdLibVersion: String?
+    private let tdLibCommit: String?
     private let fileWriter = FileWriter()
     
     
     // MARK: - Init
     
-    public init(schema: Schema, outputDir: URL) {
+    public init(schema: Schema, outputDir: URL, tdLibVersion: String? = nil, tdLibCommit: String? = nil) {
         self.schema = schema
         self.outputDir = outputDir
+        self.tdLibVersion = tdLibVersion
+        self.tdLibCommit = tdLibCommit
     }
     
     
@@ -65,27 +69,37 @@ public final class Application {
         let dto = try DtoComposer().composeEntityUtilityImplementation(
             forEntityName: "DTO",
             projectName: Constants.project,
-            outputDirectory: output.path)
+            outputDirectory: output.path,
+            tdLibVersion: self.tdLibVersion,
+            tdLibCommit: self.tdLibCommit)
         
         let decoder = try DecoderHelperComposer().composeEntityUtilityImplementation(
             forEntityName: "JSONDecoder+Result",
             projectName: Constants.project,
-            outputDirectory: output.path)
+            outputDirectory: output.path,
+            tdLibVersion: self.tdLibVersion,
+            tdLibCommit: self.tdLibCommit)
 
         let codingKeys = try CodingKeysComposer().composeEntityUtilityImplementation(
             forEntityName: "DtoCodingKeys",
             projectName: Constants.project,
-            outputDirectory: output.path)
+            outputDirectory: output.path,
+            tdLibVersion: self.tdLibVersion,
+            tdLibCommit: self.tdLibCommit)
         
         let logger = try LoggerCimposer().composeEntityUtilityImplementation(
             forEntityName: "Logger",
             projectName: Constants.project,
-            outputDirectory: output.path)
+            outputDirectory: output.path,
+            tdLibVersion: self.tdLibVersion,
+            tdLibCommit: self.tdLibCommit)
         
         let tdInt64 = try TdInt64Composer().composeEntityUtilityImplementation(
             forEntityName: "TdInt64",
             projectName: Constants.project,
-            outputDirectory: output.path)
+            outputDirectory: output.path,
+            tdLibVersion: self.tdLibVersion,
+            tdLibCommit: self.tdLibCommit)
         
         return [dto, decoder, codingKeys, logger, tdInt64]
     }
@@ -97,7 +111,9 @@ public final class Application {
             let impl = try composer.composeEntityUtilityImplementation(
                 forEntityName: enumInfo.enumType,
                 projectName: Constants.project,
-                outputDirectory: output.path)
+                outputDirectory: output.path,
+                tdLibVersion: self.tdLibVersion,
+                tdLibCommit: self.tdLibCommit)
             impls.append(impl)
         }
         return impls
@@ -111,7 +127,9 @@ public final class Application {
             let impl = try composer.composeEntityUtilityImplementation(
                 forEntityName: classInfo.name.capitalizedFirstLetter,
                 projectName: Constants.project,
-                outputDirectory: output.path)
+                outputDirectory: output.path,
+                tdLibVersion: self.tdLibVersion,
+                tdLibCommit: self.tdLibCommit)
             impls.append(impl)
         }
         return impls
@@ -130,13 +148,17 @@ public final class Application {
         let clientProtocol = try ClientProtocolComposer().composeEntityUtilityImplementation(
             forEntityName: "TdClient",
             projectName: Constants.project,
-            outputDirectory: output.path)
+            outputDirectory: output.path,
+            tdLibVersion: self.tdLibVersion,
+            tdLibCommit: self.tdLibCommit)
         
         let composer = MethodsComposer(classInfoes: schema.classInfoes)
         let methodsImpl = try composer.composeEntityUtilityImplementation(
             forEntityName: "TdApi",
             projectName: Constants.project,
-            outputDirectory: output.path)
+            outputDirectory: output.path,
+            tdLibVersion: self.tdLibVersion,
+            tdLibCommit: self.tdLibCommit)
         
         return [clientProtocol, methodsImpl]
     }
