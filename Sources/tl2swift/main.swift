@@ -1,5 +1,4 @@
 import Foundation
-import PathKit
 import TlParserLib
 
 let args = ProcessInfo.processInfo.arguments
@@ -9,10 +8,10 @@ if args.count == 1 || args[1] == "--help" || args[1] == "-h" {
     exit(0)
 }
 
-let inFile = Path(args[1])
-let outPath = args.count > 2 ? Path(args[2]) : Path.current
+let inFile = URL(fileURLWithPath: args[1])
+let outPath = args.count > 2 ? URL(fileURLWithPath: args[2]) : URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
 
-let data = try! Data(contentsOf: inFile.url)
+let data = try! Data(contentsOf: inFile)
 let tl = String(data: data, encoding: .utf8)!
 
 let parser = Parser(tl: tl)
@@ -21,5 +20,5 @@ guard let schema = parser.parse() else {
     exit(1)
 }
 
-let app = Application(schema: schema, outputDir: outPath.url)
+let app = Application(schema: schema, outputDir: outPath)
 exit(app.run())

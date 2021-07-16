@@ -9,18 +9,13 @@ let package = Package(
             name: "tl2swift",
             targets: ["tl2swift"]),
     ],
-    dependencies: [
-        .package(url: "https://github.com/kylef/PathKit.git", from: "1.0.0"),
-    ],
+    dependencies: [],
     targets: [
         .target(
             name: "TlParserLib",
-            dependencies: ["PathKit"]),
+            dependencies: []),
         .target(
             name: "tl2swift",
-            dependencies: ["TlParserLib"]),
-        .testTarget(
-            name: "tl2swiftTests",
-            dependencies: ["tl2swift"]),
+            dependencies: ["TlParserLib"])
     ]
 )
