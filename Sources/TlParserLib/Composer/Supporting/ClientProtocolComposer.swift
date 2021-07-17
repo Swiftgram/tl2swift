@@ -22,7 +22,7 @@ final class ClientProtocolComposer: Composer {
             .addLine("    func send(query: TdQuery, completion: ((Data) -> Void)?)")
             .addBlankLine()
             .addLine("    /// Synchronously executes TDLib request. Only a few requests can be executed synchronously.")
-            .addLine("    func execute(query: TdQuery)")
+            .addLine("    func execute(query: TdQuery) -> Result<[String:Any]?, Swift.Error>")
             .addBlankLine()
             .addLine("    /// Close connection with TDLib.")
             .addLine("    func close()")
