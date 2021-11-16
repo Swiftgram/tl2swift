@@ -77,7 +77,7 @@ final class MethodsComposer: Composer {
             paramsList.append("\(paramName): \(type)\(trailingComma)")
         }
         if !swiftAsync {
-            paramsList.append("completion: @escaping (Result<\(info.rootName), Swift.Error>) -> \(info.rootName)")
+            paramsList.append(", completion: @escaping (Result<\(info.rootName), Swift.Error>) -> Void")
         }
         
         var result = composeComment(info)
