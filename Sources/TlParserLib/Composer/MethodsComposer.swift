@@ -30,7 +30,13 @@ final class MethodsComposer: Composer {
         let executeFunc = composeExecuteFunc()
 
         let classPrefix = swiftAsync ? "Async" : ""
-        return ""
+        
+        var result = ""
+        if swiftAsync {
+            result = result
+                    .addLine("@available(iOS 15.0, macOS 12.0, watchOS 8.0, tvOS 15.0, *)")
+        }
+        return result
             .addLine("public final class \(classPrefix)TdApi {")
             .addBlankLine()
             .addLine("public let client: \(classPrefix)TdClient".indent())
