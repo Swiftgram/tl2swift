@@ -35,7 +35,7 @@ final class ClientProtocolComposer: Composer {
             .addLine("public protocol AsyncTdClient {")
             .addBlankLine()
             .addLine("    /// Creates client and starts updates poller to work with async requests")
-            .addLine("    func run(updateHandler: @escaping (Data) -> Void)")
+            .addLine("    func start()")
             .addBlankLine()
             .addLine("    /// Continuously listen for updates and asynchronously process them via provided updateHandler")
             .addLine("    func run(updateHandler: @escaping (Data) -> Void)")
