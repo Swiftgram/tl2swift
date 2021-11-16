@@ -160,15 +160,7 @@ public final class Application {
             tdLibVersion: self.tdLibVersion,
             tdLibCommit: self.tdLibCommit)
         
-        let asyncComposer = MethodsComposer(classInfoes: schema.classInfoes, swiftAsync: true)
-        let asyncMethodsImpl = try asyncComposer.composeEntityUtilityImplementation(
-            forEntityName: "AsyncTdApi",
-            projectName: Constants.project,
-            outputDirectory: output.path,
-            tdLibVersion: self.tdLibVersion,
-            tdLibCommit: self.tdLibCommit)
-        
-        return [clientProtocol, methodsImpl, asyncMethodsImpl]
+        return [clientProtocol, methodsImpl]
     }
     
 }

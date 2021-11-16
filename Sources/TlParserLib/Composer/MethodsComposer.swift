@@ -7,19 +7,22 @@
 
 import Foundation
 
+
 final class MethodsComposer: Composer {
     
     // MARK: - Private properties
     
     private let classInfoes: [ClassInfo]
-    private let swiftAsync: Bool
     
+
+    enum Constants {
+        static let asyncAvailableString: String = "@available(iOS 15.0, macOS 12.0, watchOS 8.0, tvOS 15.0, *)"
+    }
     
     // MARK: - Init
     
-    init(classInfoes: [ClassInfo], swiftAsync: Bool = false) {
+    init(classInfoes: [ClassInfo]) {
         self.classInfoes = classInfoes
-        self.swiftAsync = swiftAsync
     }
     
     
@@ -28,22 +31,16 @@ final class MethodsComposer: Composer {
     override func composeUtilitySourceCode() throws -> String {
         let methods = composeMethods(classInfoes: classInfoes)
         let executeFunc = composeExecuteFunc()
-
-        let classPrefix = swiftAsync ? "Async" : ""
+        let asyncExecuteFunc = composeExecuteFunc(swiftAsync: true)
         
-        var result = ""
-        if swiftAsync {
-            result = result
-                    .addLine("@available(iOS 15.0, macOS 12.0, watchOS 8.0, tvOS 15.0, *)")
-        }
-        return result
-            .addLine("public final class \(classPrefix)TdApi {")
+        return ""
+            .addLine("public final class TdApi {")
             .addBlankLine()
-            .addLine("public let client: \(classPrefix)TdClient".indent())
+            .addLine("public let client: TdClient".indent())
             .addLine("public let encoder = JSONEncoder()".indent())
             .addLine("public let decoder = JSONDecoder()".indent())
             .addBlankLine()
-            .addLine("public init(client: \(classPrefix)TdClient) {".indent())
+            .addLine("public init(client: TdClient) {".indent())
             .addLine("self.client = client".indent().indent())
             .addLine("self.encoder.keyEncodingStrategy = .convertToSnakeCase".indent().indent())
             .addLine("self.decoder.keyDecodingStrategy = .convertFromSnakeCase".indent().indent())
@@ -53,6 +50,9 @@ final class MethodsComposer: Composer {
             .append(methods.indent())
             .addBlankLine()
             .append(executeFunc.indent())
+            .addBlankLine()
+            .addBlankLine()
+            .append(asyncExecuteFunc.indent())
             .addLine("}")
     }
     
@@ -63,25 +63,30 @@ final class MethodsComposer: Composer {
         var result = ""
         for info in classInfoes where info.isFunction {
             result = result.append(composeMethod(info))
+            result = result.append(composeMethod(info, swiftAsync: true))
         }
         return result
     }
     
-    private func composeMethod(_ info: ClassInfo) -> String {
+    private func composeMethod(_ info: ClassInfo, swiftAsync: Bool = false) -> String {
         var paramsList = [String]()
-        let propertiesCount = info.properties.count
-        for (index, param) in info.properties.enumerated() {
+        for param in info.properties {
             let type = TypesHelper.getType(param.type, optional: param.optional)
             let paramName = TypesHelper.maskSwiftKeyword(param.name.underscoreToCamelCase())
-            let trailingComma = index + 1 == propertiesCount ? "" : ","
-            paramsList.append("\(paramName): \(type)\(trailingComma)")
+            paramsList.append("\(paramName): \(type),")
         }
-        if !swiftAsync {
-            let preCompletionComma = propertiesCount > 0 ? ", " : ""
-            paramsList.append("\(preCompletionComma)completion: @escaping (Result<\(info.rootName), Swift.Error>) -> Void")
+        if swiftAsync {
+            if !paramsList.isEmpty {
+                paramsList[paramsList.count - 1] = String(paramsList[paramsList.count - 1].dropLast())
+            }
+        } else {
+            paramsList.append("completion: @escaping (Result<\(info.rootName), Swift.Error>) -> Void")
         }
         
         var result = composeComment(info)
+        if swiftAsync {
+            result = result.addLine(Constants.asyncAvailableString)
+        }
         if paramsList.count > 1 {
             let params = paramsList.reduce("", { $0.addLine("\($1)".indent()) })
             result = result
@@ -100,7 +105,7 @@ final class MethodsComposer: Composer {
             }
         }
         
-        let impl = composeMethodImpl(info)
+        let impl = composeMethodImpl(info, swiftAsync: swiftAsync)
         result = result
             .append(impl.indent())
             .addLine("}")
@@ -118,7 +123,7 @@ final class MethodsComposer: Composer {
         return result
     }
     
-    private func composeMethodImpl(_ info: ClassInfo) -> String  {
+    private func composeMethodImpl(_ info: ClassInfo, swiftAsync: Bool = false) -> String  {
         let structName = info.name.capitalizedFirstLetter
         var result = ""
         if info.properties.isEmpty {
@@ -141,22 +146,21 @@ final class MethodsComposer: Composer {
         }
     }
     
-    private func composeExecuteFunc() -> String {
+    private func composeExecuteFunc(swiftAsync: Bool = false) -> String {
         if swiftAsync {
             return ""
+                .addLine(Constants.asyncAvailableString)
                 .addLine("private func execute<Q, R>(query: Q) async throws -> R where Q: Codable, R: Codable {")
                 .addLine("    let dto = DTO(query, encoder: self.encoder)")
-                .addLine("    let result = try await client.send(query: dto)")
-                .addBlankLine()
-                .addLine("    if let error = try? self.decoder.decode(DTO<Error>.self, from: result) {")
-                .addLine("        throw error.payload")
-                .addLine("    }")
-                .addLine("    let response = self.decoder.tryDecode(DTO<R>.self, from: result)")
-                .addLine("    switch response {")
-                .addLine("        case .success(let data):")
-                .addLine("            return data.payload")
-                .addLine("        case .failure(let error):")
-                .addLine("            throw error")
+                .addLine("    return try await withCheckedThrowingContinuation { continuation in")
+                .addLine("        client.send(query: dto) { [weak self] result in")
+                .addLine("            guard let strongSelf = self else { return }")
+                .addLine("            if let error = try? strongSelf.decoder.decode(DTO<Error>.self, from: result) {")
+                .addLine("                continuation.resume(with: .failure(error.payload))")
+                .addLine("            }")
+                .addLine("            let response = strongSelf.decoder.tryDecode(DTO<R>.self, from: result)")
+                .addLine("            continuation.resume(with: response.map { $0.payload })")
+                .addLine("        }")
                 .addLine("    }")
                 .addLine("}")
         } else {
