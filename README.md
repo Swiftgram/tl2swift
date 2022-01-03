@@ -5,11 +5,18 @@ This project designated for parsing Telegram Type Language (.tl) specification f
 
 
 ### Usage 
+Download TL-scheme
+
+```shell
+$ curl https://raw.githubusercontent.com/tdlib/td/master/td/generate/scheme/td_api.tl -o td_api.tl
+```
+
+Generate sources
 ```shell
 $ swift run tl2swift td_api.tl ./output/
 ```
 
-Set TDLib version & commit in header comment
+[Optional] Generate sourcea and Set TDLib version & commit in header comment
 ```shell
 $ swift run tl2swift td_api.tl ./output/ 1.7.5 73d8fb4
 ```
