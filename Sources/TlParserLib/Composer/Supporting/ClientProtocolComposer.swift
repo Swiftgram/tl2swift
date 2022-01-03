@@ -19,7 +19,7 @@ final class ClientProtocolComposer: Composer {
             .addLine("    func run(updateHandler: @escaping (Data) -> Void)")
             .addBlankLine()
             .addLine("    /// Sends request to the TDLib client.")
-            .addLine("    func send(query: TdQuery, completion: ((Data) -> Void)?)")
+            .addLine("    func send(query: TdQuery, completion: ((Data) -> Void)?) throws")
             .addBlankLine()
             .addLine("    /// Synchronously executes TDLib request. Only a few requests can be executed synchronously.")
             .addLine("    func execute(query: TdQuery) throws -> [String:Any]?")
