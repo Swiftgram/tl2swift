@@ -141,7 +141,7 @@ final class EnumComposer: Composer {
     
     private func isIndirect(_ name: String) -> Bool {
         // TODO: check enum recursion
-        let indirectEnums = ["RichText", "PageBlock"]
+        let indirectEnums = ["RichText", "PageBlock", "InternalLinkType"]
         return indirectEnums.contains(name)
     }
     
