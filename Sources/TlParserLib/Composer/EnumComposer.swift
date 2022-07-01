@@ -14,7 +14,6 @@ final class EnumComposer: Composer {
     private let enumInfo: EnumInfo
     private let schema: Schema
     
-    
     // MARK: - Init
     
     init(enumInfo: EnumInfo, schema: Schema) {
@@ -27,10 +26,10 @@ final class EnumComposer: Composer {
     
     override public func composeUtilitySourceCode() throws -> String {
         let indirect = isIndirect(enumInfo.enumType) ? "indirect " : ""
-        let cases = composeCaseItems(enumInfo.items)
-        let kinds = composeKindItems(enumInfo.items)
-        let decoder = composeDecoder(enumInfo.items)
-        let encoder = composeEncoder(enumInfo.items)
+        let cases = composeCaseItems(enumInfo)
+        let kinds = composeKindItems(enumInfo)
+        let decoder = composeDecoder(enumInfo)
+        let encoder = composeEncoder(enumInfo)
         let structs = try composeAssociatedStructs()
         
         return ""
@@ -52,30 +51,41 @@ final class EnumComposer: Composer {
     
     // MARK: - Private methods
     
-    private func composeCaseItems(_ items: [EnumItem]) -> String {
+    private func makeCase(for item: EnumItem, typeName: String) -> String {
+        let index = item.name.index(
+            item.name.startIndex,
+            offsetBy: typeName.replacingOccurrences(of: "Content", with: "").count)
+        var caseName = item.name.suffix(from: index)
+        // Make the string camelCase again
+        caseName = caseName.prefix(1).lowercased() + caseName.dropFirst()
+        return String(caseName)
+    }
+    
+    private func composeCaseItems(_ info: EnumInfo) -> String {
         var result = ""
-        for item in items {
+        for item in info.items {
             result = result.addLine("/// \(item.description)")
+            let caseName = makeCase(for: item, typeName: info.enumType)
             if let assocClass = item.associatedClassName {
-                result = result.addLine("case \(item.name)(\(assocClass))")
+                result = result.addLine("case \(caseName)(\(assocClass))")
             } else {
-                result = result.addLine("case \(item.name)")
+                result = result.addLine("case \(caseName)")
             }
             result = result.addBlankLine()
         }
         return result
     }
     
-    private func composeKindItems(_ items: [EnumItem]) -> String {
-        let cases = items.reduce("", { $0.addLine("case \($1.name)".indent()) })
+    private func composeKindItems(_ info: EnumInfo) -> String {
+        let cases = info.items.reduce("", { $0.addLine("case \($1.name)".indent()) })
         return ""
             .addLine("private enum Kind: String, Codable {")
             .append(cases)
             .addLine("}")
     }
     
-    private func composeDecoder(_ items: [EnumItem]) -> String {
-        let cases = composeDecoderCases(items)
+    private func composeDecoder(_ info: EnumInfo) -> String {
+        let cases = composeDecoderCases(info)
         return ""
             .addLine("public init(from decoder: Decoder) throws {")
             .addLine("let container = try decoder.container(keyedBy: DtoCodingKeys.self)".indent())
@@ -86,22 +96,23 @@ final class EnumComposer: Composer {
             .addLine("}")
     }
     
-    private func composeDecoderCases(_ items: [EnumItem]) -> String {
+    private func composeDecoderCases(_ info: EnumInfo) -> String {
         var result = ""
-        for item in items {
+        for item in info.items {
             result = result.addLine("case .\(item.name):")
+            let caseName = makeCase(for: item, typeName: info.enumType)
             if let assocStruct = item.associatedClassName {
                 result = result.addLine("let value = try \(assocStruct)(from: decoder)".indent())
-                result = result.addLine("self = .\(item.name)(value)".indent())
+                result = result.addLine("self = .\(caseName)(value)".indent())
             } else {
-                result = result.addLine("self = .\(item.name)".indent())
+                result = result.addLine("self = .\(caseName)".indent())
             }
         }
         return result
     }
     
-    private func composeEncoder(_ items: [EnumItem]) -> String {
-        let cases = composeEncoderCases(items)
+    private func composeEncoder(_ info: EnumInfo) -> String {
+        let cases = composeEncoderCases(info)
         return ""
             .addLine("public func encode(to encoder: Encoder) throws {")
             .addLine("var container = encoder.container(keyedBy: DtoCodingKeys.self)".indent())
@@ -111,15 +122,16 @@ final class EnumComposer: Composer {
             .addLine("}")
     }
     
-    private func composeEncoderCases(_ items: [EnumItem]) -> String {
+    private func composeEncoderCases(_ info: EnumInfo) -> String {
         var result = ""
-        for item in items {
+        for item in info.items {
+            let caseName = makeCase(for: item, typeName: info.enumType)
             if item.associatedClassName != nil {
-                result = result.addLine("case .\(item.name)(let value):")
+                result = result.addLine("case .\(caseName)(let value):")
                 result = result.addLine("try container.encode(Kind.\(item.name), forKey: .type)".indent())
                 result = result.addLine("try value.encode(to: encoder)".indent())
             } else {
-                result = result.addLine("case .\(item.name):")
+                result = result.addLine("case .\(caseName):")
                 result = result.addLine("try container.encode(Kind.\(item.name), forKey: .type)".indent())
             }
         }
@@ -144,5 +156,4 @@ final class EnumComposer: Composer {
         let indirectEnums = ["RichText", "PageBlock", "InternalLinkType"]
         return indirectEnums.contains(name)
     }
-    
 }
