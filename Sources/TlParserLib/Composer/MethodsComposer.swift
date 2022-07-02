@@ -37,13 +37,21 @@ final class MethodsComposer: Composer {
             .addLine("public final class TdApi {")
             .addBlankLine()
             .addLine("public let client: TdClient".indent())
-            .addLine("public let encoder = JSONEncoder()".indent())
-            .addLine("public let decoder = JSONDecoder()".indent())
+            .addBlankLine()
+            .addLine("public static var encoder: JSONEncoder {".indent())
+            .addLine("    let encoder = JSONEncoder()".indent())
+            .addLine("    encoder.keyEncodingStrategy = .convertToSnakeCase".indent())
+            .addLine("    return encoder".indent())
+            .addLine("}".indent())
+            .addBlankLine()
+            .addLine("public static var decoder: JSONDecoder {".indent())
+            .addLine("    let decoder = JSONDecoder()".indent())
+            .addLine("    decoder.keyDecodingStrategy = .convertFromSnakeCase".indent())
+            .addLine("    return decoder".indent())
+            .addLine("}".indent())
             .addBlankLine()
             .addLine("public init(client: TdClient) {".indent())
-            .addLine("self.client = client".indent().indent())
-            .addLine("self.encoder.keyEncodingStrategy = .convertToSnakeCase".indent().indent())
-            .addLine("self.decoder.keyDecodingStrategy = .convertFromSnakeCase".indent().indent())
+            .addLine("self.client = client".indent(tabCount: 2))
             .addLine("}".indent())
             .addBlankLine()
             .addBlankLine()
@@ -115,11 +123,33 @@ final class MethodsComposer: Composer {
     }
     
     private func composeComment(_ info: ClassInfo) -> String {
-        var result = "/// \(info.description)\n"
+        var result = ""
+        var returns: String? = nil
+        
+        let splitStrings = info.description.split(separator: ".")
+        for string in splitStrings {
+            if string.hasPrefix(" Returns ") { // Spaces are needed
+                var temp = string.suffix(string.count - 9)
+                temp = temp.prefix(1).uppercased() + temp.dropFirst()
+                returns = String(temp)
+            }
+        }
+        
+        if let returns = returns {
+            // The prefix is to remove the return info from the description
+            result = "/// \(info.description.prefix(info.description.count - (returns.count + 9)))\n"
+        } else {
+            result = "/// \(info.description)\n"
+        }
+        
         for param in info.properties {
             let paramName = TypesHelper.maskSwiftKeyword(param.name.underscoreToCamelCase())
             result = result.addLine("/// - Parameter \(paramName): \(param.description ?? "")")
         }
+        if let returns = returns {
+            result = result.addLine("/// - Returns: \(returns)")
+        }
+        
         return result
     }
     
