@@ -41,7 +41,7 @@ struct TypesHelper {
     }
     
     /// Masking keywords for using as struct properties or parameters
-    /// - returns: \`keyword\`
+    /// - Returns: \`keyword\`
     static func maskSwiftKeyword(_ keyword: String) -> String {
         let keywords = ["protocol", "class", "struct", "enum", "func"]
         if keywords.contains(keyword) {

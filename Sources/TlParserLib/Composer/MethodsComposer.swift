@@ -123,11 +123,33 @@ final class MethodsComposer: Composer {
     }
     
     private func composeComment(_ info: ClassInfo) -> String {
-        var result = "/// \(info.description)\n"
+        var result = ""
+        var returns: String? = nil
+        
+        let splitStrings = info.description.split(separator: ".")
+        for string in splitStrings {
+            if string.hasPrefix(" Returns ") { // Spaces are needed
+                var temp = string.suffix(string.count - 9)
+                temp = temp.prefix(1).uppercased() + temp.dropFirst()
+                returns = String(temp)
+            }
+        }
+        
+        if let returns = returns {
+            // The prefix is to remove the return info from the description
+            result = "/// \(info.description.prefix(info.description.count - (returns.count + 9)))\n"
+        } else {
+            result = "/// \(info.description)\n"
+        }
+        
         for param in info.properties {
             let paramName = TypesHelper.maskSwiftKeyword(param.name.underscoreToCamelCase())
             result = result.addLine("/// - Parameter \(paramName): \(param.description ?? "")")
         }
+        if let returns = returns {
+            result = result.addLine("/// - Returns: \(returns)")
+        }
+        
         return result
     }
     
