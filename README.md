@@ -1,5 +1,7 @@
 # tl2swift
 
+> # Project archived and now it's a part of [TDLibKit](https://github.com/Swiftgram/TDLibKit/tree/main/scripts/tl2swift)
+
 This project designated for parsing Telegram Type Language (.tl) specification for [TDLib](https://github.com/tdlib/td) and generating Swift code. <br>
 `tl2swift` generates swift structures, enums and methods for working with TDLib json interface. See example in project [tdlib-swift](https://github.com/modestman/tdlib-swift)
 
